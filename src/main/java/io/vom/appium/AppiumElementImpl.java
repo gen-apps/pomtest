@@ -3,18 +3,16 @@ package io.vom.appium;
 import io.vom.core.Driver;
 import io.vom.core.Element;
 import io.vom.exceptions.ElementNotFoundException;
-import io.vom.utils.Selector;
 import io.vom.utils.Point;
 import io.vom.utils.Properties;
+import io.vom.utils.Selector;
 import io.vom.utils.Size;
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.WebElement;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AppiumElementImpl implements Element {
     private final AppiumDriverImpl driver;
@@ -110,7 +108,7 @@ public class AppiumElementImpl implements Element {
     }
 
     @Override
-    public void drag(@NonNull Point point,@NonNull Duration duration) {
+    public void drag(@NonNull Point point, @NonNull Duration duration) {
         var size = getSize();
         var currentPoint = this.getPoint();
         var centerPoint = new Point(currentPoint.getX() + size.getWidth() / 2, currentPoint.getY() + size.getHeight() / 2);
@@ -124,31 +122,34 @@ public class AppiumElementImpl implements Element {
 
     @Override
     public Element findElement(@NonNull Selector selector) {
-        try{
-            return new AppiumElementImpl(driver, webElement.findElement(AppiumDriverImpl.bySelector(selector)));
-        }catch (NoSuchElementException e){
-            var exception = new ElementNotFoundException("Element was not found by this selector:" +
-                    " name='"+selector.getName()+"' type='"+selector.getType()+"' value='"+selector.getValue()+"'");
-            exception.addSuppressed(e);
+        return AppiumDriverImpl.findElement(driver, webElement, selector);
+    }
 
-            throw exception;
-        }
+    @Override
+    public Element findElement(Selector selector, Duration waitUntil) {
+        return AppiumDriverImpl.findElement(driver, webElement, selector, waitUntil);
     }
 
     @Override
     public Element findNullableElement(@NonNull Selector selector) {
-        try{
-            return findElement(selector);
-        }catch (ElementNotFoundException e){
+        try {
+            return findElement(selector, Duration.ZERO);
+        } catch (ElementNotFoundException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public Element findNullableElement(Selector selector, Duration duration) {
+        try {
+            return findElement(selector, duration);
+        } catch (ElementNotFoundException e) {
             return null;
         }
     }
 
     @Override
     public List<Element> findElements(@NonNull Selector selector) {
-        return webElement.findElements(AppiumDriverImpl.bySelector(selector))
-                .stream()
-                .map((e) -> new AppiumElementImpl(driver, e))
-                .collect(Collectors.toList());
+        return AppiumDriverImpl.findElements(driver, webElement, selector);
     }
 }

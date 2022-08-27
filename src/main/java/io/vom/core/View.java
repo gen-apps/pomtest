@@ -79,8 +79,18 @@ public class View<T extends View<T>> implements Searchable {
     }
 
     @Override
+    public Element findElement(Selector selector, Duration waitUntil) {
+        return context.getDriver().findElement(selector, waitUntil);
+    }
+
+    @Override
     public Element findNullableElement(Selector selector) {
         return context.getDriver().findNullableElement(selector);
+    }
+
+    @Override
+    public Element findNullableElement(Selector selector, Duration duration) {
+        return getContext().getDriver().findNullableElement(selector, duration);
     }
 
     @Override
@@ -124,7 +134,7 @@ public class View<T extends View<T>> implements Searchable {
         return getContext().loadView(klass);
     }
 
-    public View<?> back(){
+    public View<?> back() {
         driver.back();
 
         return _self;
@@ -240,7 +250,7 @@ public class View<T extends View<T>> implements Searchable {
         return _self;
     }
 
-    public T ScrollRightToEnd() {
+    public T scrollRightToEnd() {
         driver.scrollRightToEnd();
 
         return _self;

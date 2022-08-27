@@ -10,13 +10,12 @@ import io.vom.core.Element;
 import io.vom.exceptions.ElementNotFoundException;
 import io.vom.exceptions.InfinityLoopException;
 import io.vom.exceptions.PlatformNotFoundException;
+import io.vom.utils.Point;
 import io.vom.utils.Properties;
 import io.vom.utils.*;
 import org.apache.commons.lang.text.StrSubstitutor;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.OutputType;
+import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -30,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static io.vom.utils.Properties.DEFAULT_SCROLL_DURATION;
 import static io.vom.utils.Properties.DEFAULT_SCROLL_LENGTH;
+
 
 public class AppiumDriverImpl implements Driver {
 
@@ -51,7 +51,7 @@ public class AppiumDriverImpl implements Driver {
         appiumDriver = new AppiumDriver(remoteAddress, desiredCapabilities);
     }
 
-    public AppiumDriver getAppiumDriver(){
+    public AppiumDriver getAppiumDriver() {
         return appiumDriver;
     }
 
@@ -77,30 +77,62 @@ public class AppiumDriverImpl implements Driver {
 
             var caps = new DesiredCapabilities(map);
             appiumDriver = new AppiumDriver(url, caps);
+            Duration implicitlyDuration = Duration.ofSeconds(Integer.parseInt(prop.getProperty("implicitly_wait_time_in_seconds", "0")));
+            appiumDriver.manage().timeouts().implicitlyWait(implicitlyDuration);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    public static Element findElement(AppiumDriverImpl driver, SearchContext searchContext, Selector selector) {
+        Duration waitUntil = Duration.ofSeconds(Integer.parseInt(Properties.getInstance().getProperty("explicitly_wait_time_in_seconds", "0")));
+        return findElement(driver, searchContext, selector, waitUntil);
+    }
+
+    public static Element findElement(AppiumDriverImpl driver, SearchContext searchContext, Selector selector, Duration waitUntil) {
+        return DriverUtil.waitUntil(waitUntil, () -> {
+            try {
+                var ae = searchContext.findElement(bySelector(selector));
+
+                return new AppiumElementImpl(driver, ae);
+            } catch (NoSuchElementException e) {
+                var exception = new ElementNotFoundException("Element was not found by this selector:" +
+                        " name='" + selector.getName() + "' type='" + selector.getType() + "' value='" + selector.getValue() + "'");
+                exception.addSuppressed(e);
+
+                throw exception;
+            }
+        });
+    }
+
+
+    public static List<Element> findElements(AppiumDriverImpl driver, SearchContext searchContext, Selector selector) {
+        return searchContext.findElements(bySelector(selector))
+                .stream()
+                .map((e) -> new AppiumElementImpl(driver, e))
+                .collect(Collectors.toList());
+    }
+
     @Override
     public Element findElement(Selector selector) {
-        try {
-            var ae = appiumDriver.findElement(bySelector(selector));
+        return findElement(this, appiumDriver, selector);
+    }
 
-            return new AppiumElementImpl(this, ae);
-        } catch (NoSuchElementException e) {
-            var exception = new ElementNotFoundException("Element was not found by this selector:" +
-                    " name='" + selector.getName() + "' type='" + selector.getType() + "' value='" + selector.getValue() + "'");
-            exception.addSuppressed(e);
 
-            throw exception;
-        }
+    @Override
+    public Element findElement(Selector selector, Duration waitUntil) {
+        return findElement(this, appiumDriver, selector, waitUntil);
     }
 
     @Override
     public Element findNullableElement(Selector selector) {
+        return findNullableElement(selector, Duration.ZERO);
+    }
+
+    @Override
+    public Element findNullableElement(Selector selector, Duration duration) {
         try {
-            return findElement(selector);
+            return findElement(selector, duration);
         } catch (ElementNotFoundException e) {
             return null;
         }
@@ -108,10 +140,7 @@ public class AppiumDriverImpl implements Driver {
 
     @Override
     public List<Element> findElements(Selector selector) {
-        return appiumDriver.findElements(bySelector(selector))
-                .stream()
-                .map((e) -> new AppiumElementImpl(this, e))
-                .collect(Collectors.toList());
+        return findElements(this, appiumDriver, selector);
     }
 
     static By bySelector(Selector selector) {
