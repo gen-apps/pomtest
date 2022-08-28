@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import io.vom.core.Context;
 import io.vom.core.Driver;
 import io.vom.core.Element;
@@ -76,7 +78,13 @@ public class AppiumDriverImpl implements Driver {
                     .orElseThrow(() -> new PlatformNotFoundException("Platform: '" + platform + "' was not found on appium json file"));
 
             var caps = new DesiredCapabilities(map);
-            appiumDriver = new AppiumDriver(url, caps);
+            if(platform.equals("android")){
+                appiumDriver = new AndroidDriver(url,caps);
+            }else if(platform.equals("ios")){
+                appiumDriver = new IOSDriver(url,caps);
+            }else{
+                appiumDriver = new AppiumDriver(url,caps);
+            }
             Duration implicitlyDuration = Duration.ofSeconds(Integer.parseInt(prop.getProperty("implicitly_wait_time_in_seconds", "0")));
             appiumDriver.manage().timeouts().implicitlyWait(implicitlyDuration);
         } catch (Exception e) {
