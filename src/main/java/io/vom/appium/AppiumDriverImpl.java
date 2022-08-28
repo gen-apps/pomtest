@@ -78,12 +78,12 @@ public class AppiumDriverImpl implements Driver {
                     .orElseThrow(() -> new PlatformNotFoundException("Platform: '" + platform + "' was not found on appium json file"));
 
             var caps = new DesiredCapabilities(map);
-            if(platform.equals("android")){
-                appiumDriver = new AndroidDriver(url,caps);
-            }else if(platform.equals("ios")){
-                appiumDriver = new IOSDriver(url,caps);
-            }else{
-                appiumDriver = new AppiumDriver(url,caps);
+            if (platform.equals("android")) {
+                appiumDriver = new AndroidDriver(url, caps);
+            } else if (platform.equals("ios")) {
+                appiumDriver = new IOSDriver(url, caps);
+            } else {
+                appiumDriver = new AppiumDriver(url, caps);
             }
             Duration implicitlyDuration = Duration.ofSeconds(Long.parseLong(prop.getProperty("implicitly_wait_time_in_seconds", "0")));
             appiumDriver.manage().timeouts().implicitlyWait(implicitlyDuration);
@@ -428,11 +428,16 @@ public class AppiumDriverImpl implements Driver {
     @Override
     public Locale getLocale() {
         Selector texts = context.getCommonSelector("not_empty_text");
-        var l = findElements(texts)
-                .stream()
-                .map(Element::getText)
-                .collect(Collectors.toList());
+        try {
+            var l = findElements(texts)
+                    .stream()
+                    .map(Element::getText)
+                    .collect(Collectors.toList());
 
-        return VomUtils.getLocale(l);
+            return VomUtils.getLocale(l);
+        } catch (StaleElementReferenceException ignore) {
+            return getLocale();
+        }
+
     }
 }
