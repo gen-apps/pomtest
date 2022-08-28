@@ -5,14 +5,21 @@ import io.vom.annotations.actions.Click;
 import io.vom.annotations.actions.GetText;
 import io.vom.annotations.actions.SetText;
 import io.vom.annotations.repositories.Name;
+import io.vom.core.Element;
 import io.vom.utils.Selector;
+
+import java.time.Duration;
 
 public abstract class LoginView extends SuperView<LoginView> {
 
+    Selector selector = Selector.from("xpath", "//bla");
     private Selector username;
 
+    public Element getSelectorTest() {
+        return findNullableElement(selector, Duration.ofSeconds(4));
+    }
 
-    public LoginView fillUsername(String name){
+    public LoginView fillUsername(String name) {
         findElement(username).setText(name);
 
         return this;

@@ -85,8 +85,8 @@ public class AppiumDriverImpl implements Driver {
             }else{
                 appiumDriver = new AppiumDriver(url,caps);
             }
-        //    Duration implicitlyDuration = Duration.ofSeconds(Long.parseLong(prop.getProperty("implicitly_wait_time_in_seconds", "0")));
-         //   appiumDriver.manage().timeouts().implicitlyWait(implicitlyDuration);
+            Duration implicitlyDuration = Duration.ofSeconds(Long.parseLong(prop.getProperty("implicitly_wait_time_in_seconds", "0")));
+            appiumDriver.manage().timeouts().implicitlyWait(implicitlyDuration);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
