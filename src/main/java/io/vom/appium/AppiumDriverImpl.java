@@ -2,6 +2,7 @@ package io.vom.appium;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.sun.source.tree.TryTree;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
@@ -381,11 +382,15 @@ public class AppiumDriverImpl implements Driver {
 
     private void scrollToEdge(Runnable runnable) {
         byte[] screenshot;
+        try {
+            do {
+                screenshot = findElement(scrollContainer).takeScreenshot();
+                runnable.run();
+            } while (!Arrays.equals(screenshot, findElement(scrollContainer).takeScreenshot()));
+        } catch (StaleElementReferenceException ignore) {
+            scrollToEdge(runnable);
+        }
 
-        do {
-            screenshot = findElement(scrollContainer).takeScreenshot();
-            runnable.run();
-        } while (!Arrays.equals(screenshot, findElement(scrollContainer).takeScreenshot()));
     }
 
     @Override
